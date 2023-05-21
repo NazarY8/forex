@@ -12,6 +12,7 @@ object Dependencies {
 
     val kindProjector       = "0.10.3"
     val logback             = "1.2.3"
+    val scalaCache          = "0.28.0"
     val scalaCheck          = "1.15.3"
     val scalaTest           = "3.2.7"
     val catsScalaCheck      = "0.3.0"
@@ -40,6 +41,9 @@ object Dependencies {
 
     // Runtime
     lazy val logback             = "ch.qos.logback"        %  "logback-classic"            % Versions.logback
+
+    //Cache
+    lazy val caffeineCache       = "com.github.cb372"      %% "scalacache-caffeine"         % Versions.scalaCache
 
     // Test
     lazy val scalaTest           = "org.scalatest"         %% "scalatest"                  % Versions.scalaTest

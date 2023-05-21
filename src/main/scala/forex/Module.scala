@@ -1,13 +1,13 @@
 package forex
 
-import cats.effect.{ ConcurrentEffect, Timer }
+import cats.effect.{ConcurrentEffect, Timer}
 import forex.config.ApplicationConfig
 import forex.http.rates.RatesHttpRoutes
 import forex.services._
 import forex.programs._
 import org.http4s._
 import org.http4s.implicits._
-import org.http4s.server.middleware.{ AutoSlash, Timeout }
+import org.http4s.server.middleware.{AutoSlash, Timeout}
 
 class Module[F[_]: ConcurrentEffect: Timer](config: ApplicationConfig) {
 
