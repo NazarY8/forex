@@ -1,10 +1,11 @@
-package forex.http
-package rates
+package forex.http.rates
 
+import cats.data.Validated.{Invalid, Valid}
 import cats.effect.Sync
+import cats.implicits.catsSyntaxApplicativeError
 import cats.syntax.flatMap._
 import forex.programs.RatesProgram
-import forex.programs.rates.{ Protocol => RatesProgramProtocol }
+import forex.programs.rates.{Protocol => RatesProgramProtocol}
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.Router
@@ -16,9 +17,22 @@ class RatesHttpRoutes[F[_]: Sync](rates: RatesProgram[F]) extends Http4sDsl[F] {
   private[http] val prefixPath = "/rates"
 
   private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
-    case GET -> Root :? FromQueryParam(from) +& ToQueryParam(to) =>
-      rates.get(RatesProgramProtocol.GetRatesRequest(from, to)).flatMap(Sync[F].fromEither).flatMap { rate =>
-        Ok(rate.asGetApiResponse)
+    case GET -> Root :? FromQueryParam(fromValidated) +& ToQueryParam(toValidated) =>
+      (fromValidated, toValidated) match {
+        case (Valid(from), Valid(to)) =>
+          rates.get(RatesProgramProtocol.GetRatesRequest(from, to)).flatMap(Sync[F].fromEither).flatMap { rate =>
+            Ok(rate.asGetApiResponse)
+          }.handleErrorWith {
+            _: Throwable =>
+              if (from == to) BadRequest(s"Currency should be different, " +
+                s"you can't exchange same type of currency: $from -> $to")
+              else
+                InternalServerError("An unexpected error occurred")
+          }
+        case (Invalid(errors), _) =>
+          BadRequest("Invalid 'from' parameter: " + errors.toList.map(_.toString).mkString(", "))
+        case (_, Invalid(errors)) =>
+          BadRequest("Invalid 'to' parameter: " + errors.toList.map(_.toString).mkString(", "))
       }
   }
 
