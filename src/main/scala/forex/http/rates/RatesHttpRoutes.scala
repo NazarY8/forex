@@ -5,6 +5,7 @@ import cats.effect.Sync
 import cats.implicits.catsSyntaxApplicativeError
 import cats.syntax.flatMap._
 import forex.programs.RatesProgram
+import forex.programs.rates.Errors.Error.RateLimitExceeded
 import forex.programs.rates.{Protocol => RatesProgramProtocol}
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
@@ -23,11 +24,12 @@ class RatesHttpRoutes[F[_]: Sync](rates: RatesProgram[F]) extends Http4sDsl[F] {
           rates.get(RatesProgramProtocol.GetRatesRequest(from, to)).flatMap(Sync[F].fromEither).flatMap { rate =>
             Ok(rate.asGetApiResponse)
           }.handleErrorWith {
-            _: Throwable =>
+            case RateLimitExceeded(message) =>
+              InternalServerError(s"The number of requests is limited: -> $message")
+            case _: Throwable =>
               if (from == to) BadRequest(s"Currency should be different, " +
-                s"you can't exchange same type of currency: $from -> $to")
-              else
-                InternalServerError("An unexpected error occurred")
+                s"you can't exchange the same type of currency: $from -> $to")
+              else InternalServerError("An unexpected error occurred")
           }
         case (Invalid(errors), _) =>
           BadRequest("Invalid 'from' parameter: " + errors.toList.map(_.toString).mkString(", "))

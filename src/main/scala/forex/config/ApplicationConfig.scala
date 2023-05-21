@@ -16,5 +16,6 @@ case class HttpConfig(
 case class OneFrameConfig(
     url: String,
     token: String,
-    ttl: FiniteDuration
+    ttl: FiniteDuration,
+    rateLimit: Int
 )

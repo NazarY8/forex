@@ -7,7 +7,7 @@ import forex.config.OneFrameConfig
 import forex.domain.Rate
 import forex.http.rates.Protocol.responseDecoder
 import forex.services.rates.Algebra
-import forex.services.rates.Errors.Error.OneFrameLookupFailed
+import forex.services.rates.Errors.Error.{OneFrameLookupFailed, RateLimitExceeded}
 import forex.services.rates.Errors._
 import org.http4s._
 import org.http4s.circe.jsonOf
@@ -26,18 +26,25 @@ class OneFrameClient[F[_]: ConcurrentEffect](config: OneFrameConfig) extends Alg
     .expireAfterWrite(Duration.ofSeconds(config.ttl.toSeconds))
     .build[Rate.Pair, List[Rate]]()
 
+  private val rateLimiter: RateLimiter = RateLimiter(config.rateLimit)
+
   override def get(pair: Rate.Pair): F[Error Either Rate] = {
-    Option(cache.getIfPresent(pair)) match {
-      case Some(value) =>
-        Applicative[F].pure(Right(value.last))
-      case None =>
-        buildRequest(pair).map {
-          case Right(value) =>
-            cache.put(pair, value)
-            Right(value.last)
-          case Left(error) =>
-            Left(error)
-        }
+    if (rateLimiter.isRateLimited) {
+      Applicative[F].pure(Left(RateLimitExceeded(s"The rate within one day is - ${config.rateLimit}, please try again later")))
+    } else {
+      rateLimiter.incrementCounter()
+      Option(cache.getIfPresent(pair)) match {
+        case Some(value) =>
+          Applicative[F].pure(Right(value.last))
+        case None =>
+          buildRequest(pair).map {
+            case Right(value) =>
+              cache.put(pair, value)
+              Right(value.last)
+            case Left(error) =>
+              Left(error)
+          }
+      }
     }
   }
 
