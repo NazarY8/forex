@@ -14,11 +14,17 @@
 4. from project folder, run `sbt run`
 5. Then use Postman or any other app for requests.
    I'll provide several examples for routes:
+   
    `http://localhost:10000/rates?from=USD&to=EUR`;
+   
    `http://localhost:10000/rates?from=USD&to=USD`;
+   
    `http://localhost:10000/rates?from=USD1&to=EUR`;
+   
    `http://localhost:10000/rates?from=USD&to=EUR1`;
-   `for test limit, just set 5 insted 10000 in application.conf and run 6 times request, like http://localhost:10000/rates?from=USD&to=EUR`
+   
+   `for test limit, just set 5 insted 10000 in application.conf and run 6 times request, 
+   like http://localhost:10000/rates?from=USD&to=EUR`
 
 ### How to test? 🎉️
 
