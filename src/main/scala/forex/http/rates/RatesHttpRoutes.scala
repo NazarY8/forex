@@ -26,10 +26,10 @@ class RatesHttpRoutes[F[_]: Sync](rates: RatesProgram[F]) extends Http4sDsl[F] {
           }.handleErrorWith {
             case RateLimitExceeded(message) =>
               InternalServerError(s"The number of requests is limited: -> $message")
+            case _: Throwable if from == to =>
+              BadRequest(s"Currency should be different, you can't exchange the same type of currency: $from -> $to")
             case _: Throwable =>
-              if (from == to) BadRequest(s"Currency should be different, " +
-                s"you can't exchange the same type of currency: $from -> $to")
-              else InternalServerError("An unexpected error occurred")
+              InternalServerError("An unexpected error occurred")
           }
         case (Invalid(errors), _) =>
           BadRequest("Invalid 'from' parameter: " + errors.toList.map(_.toString).mkString(", "))

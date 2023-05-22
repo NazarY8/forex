@@ -5,13 +5,14 @@ import forex.config.ApplicationConfig
 import forex.http.rates.RatesHttpRoutes
 import forex.services._
 import forex.programs._
+import forex.services.rates.interpreters.RateLimiter
 import org.http4s._
 import org.http4s.implicits._
 import org.http4s.server.middleware.{AutoSlash, Timeout}
 
-class Module[F[_]: ConcurrentEffect: Timer](config: ApplicationConfig) {
+class Module[F[_]: ConcurrentEffect: Timer](config: ApplicationConfig, rateLimiter: RateLimiter) {
 
-  private val ratesService: RatesService[F] = RatesServices.oneFrame[F](config.oneFrame)
+  private val ratesService: RatesService[F] = RatesServices.oneFrame[F](config.oneFrame, rateLimiter)
 
   private val ratesProgram: RatesProgram[F] = RatesProgram[F](ratesService)
 

@@ -69,4 +69,17 @@ object Protocol {
   }
 
   implicit val responseDecoder: Decoder[List[Rate]] = Decoder.decodeList(rateDecoder)
+
+  implicit val oneFrameRateDecoder: Decoder[Rate] = Decoder.instance { cursor =>
+    for {
+      from <- cursor.downField("from").as[Currency]
+      to <- cursor.downField("to").as[Currency]
+      bid <- cursor.downField("bid").as[BigDecimal]
+      ask <- cursor.downField("ask").as[BigDecimal]
+      price <- cursor.downField("price").as[BigDecimal]
+      timestamp <- cursor.downField("timestamp").as[OffsetDateTime]
+    } yield {
+      Rate(from, to, bid, ask, Price(price), Timestamp(timestamp))
+    }
+  }
 }

@@ -18,15 +18,13 @@ import com.github.benmanes.caffeine.cache.{Cache, Caffeine}
 import java.time.Duration
 import scala.concurrent.ExecutionContext
 
-class OneFrameClient[F[_]: ConcurrentEffect](config: OneFrameConfig) extends Algebra[F] {
+class OneFrameClient[F[_]: ConcurrentEffect](config: OneFrameConfig, rateLimiter: RateLimiter) extends Algebra[F] {
   private val blazeClient : Resource[F, Client[F]] = BlazeClientBuilder[F](ExecutionContext.global).resource
   private implicit val rateDecoder: EntityDecoder[F, List[Rate]] = jsonOf[F, List[Rate]]
 
   private val cache: Cache[Rate.Pair, List[Rate]] = Caffeine.newBuilder()
     .expireAfterWrite(Duration.ofSeconds(config.ttl.toSeconds))
     .build[Rate.Pair, List[Rate]]()
-
-  private val rateLimiter: RateLimiter = RateLimiter(config.rateLimit)
 
   override def get(pair: Rate.Pair): F[Error Either Rate] = {
     if (rateLimiter.isRateLimited) {

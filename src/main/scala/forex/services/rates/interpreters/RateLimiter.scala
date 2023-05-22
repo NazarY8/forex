@@ -3,7 +3,7 @@ package forex.services.rates.interpreters
 import java.time.Duration
 
 
-private[interpreters] case class RateLimiter(private val limit: Int) {
+case class RateLimiter(private val limit: Int) {
   private var counter: Int = 0
   private var lastResetTime: Long = System.currentTimeMillis()
 
